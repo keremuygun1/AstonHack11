@@ -1,5 +1,5 @@
-import { useState } from 'react'
-import { Link, Route, Routes } from 'react-router-dom'
+import { useEffect, useMemo, useState } from 'react'
+import { Link, Route, Routes, useLocation } from 'react-router-dom'
 import './App.css'
 import heroIllustration from '../Octopus.png'
 import FoundItem from './pages/FoundItem.jsx'
@@ -8,17 +8,42 @@ import SignIn from './pages/SignIn.jsx'
 import SignUp from './pages/SignUp.jsx'
 import MapPage from './pages/MapPage.jsx'
 import Profile from './pages/Profile.jsx'
-import { useAuth0, withAuthenticationRequired } from "@auth0/auth0-react";
-
-const ProtectedFoundItem = withAuthenticationRequired(FoundItem);
-const ProtectedLostItem = withAuthenticationRequired(LostItem);
-const ProtectedProfile = withAuthenticationRequired(Profile);
+import { useAuth0 } from "@auth0/auth0-react";
+// Profile should be accessible without Auth0 redirect
 
 
 function App() {
-  const { loginWithRedirect, isAuthenticated } = useAuth0();
+  const { loginWithRedirect, isAuthenticated, logout } = useAuth0();
+  const location = useLocation();
   const [activeModal, setActiveModal] = useState(null)
   const [isClosing, setIsClosing] = useState(false)
+  const [authRedirected, setAuthRedirected] = useState(false)
+
+  useEffect(() => {
+    const params = new URLSearchParams(location.search)
+    if (params.get('code') && params.get('state')) {
+      setAuthRedirected(true)
+      localStorage.setItem('auth0_redirected', 'true')
+    }
+  }, [location.search])
+
+  useEffect(() => {
+    if (!authRedirected) {
+      const stored = localStorage.getItem('auth0_redirected')
+      if (stored === 'true') {
+        setAuthRedirected(true)
+      }
+    }
+  }, [authRedirected])
+
+  const shouldShowAuth = useMemo(
+    () => ({
+      showLogout: isAuthenticated || authRedirected,
+      showSignIn: !(isAuthenticated || authRedirected),
+    }),
+    [isAuthenticated, authRedirected]
+  )
+  const canReport = shouldShowAuth.showLogout
 
   const closeModal = () => {
     setIsClosing(true)
@@ -56,6 +81,24 @@ function App() {
                 <span className="brand-dot" aria-hidden="true" />
                 <span className="brand-name">Lost and Found</span>
               </Link>
+              {shouldShowAuth.showLogout && (
+                <div className="topbar-actions">
+                  <Link className="btn btn-ghost" to="/profile">
+                    Profile
+                  </Link>
+                  <button
+                    className="btn btn-ghost"
+                    type="button"
+                    onClick={() => {
+                      localStorage.removeItem('auth0_redirected')
+                      setAuthRedirected(false)
+                      logout({ logoutParams: { returnTo: window.location.origin } })
+                    }}
+                  >
+                    Log out
+                  </button>
+                </div>
+              )}
             </header>
             <section className="hero">
               <div className="hero-text">
@@ -64,19 +107,22 @@ function App() {
                   We help reunite people with their belongings quickly and safely.
                 </p>
               </div>
-              <button
-  className="btn landing-signin"
-  type="button"
-  onClick={() => loginWithRedirect()}
->
-  Sign in to report an item
-</button>
+              {shouldShowAuth.showSignIn && (
+                <button
+                  className="btn landing-signin"
+                  type="button"
+                  onClick={() => loginWithRedirect()}
+                >
+                  Sign in to report an item
+                </button>
+              )}
             </section>
             <div className="actions actions-bottom">
               <button
                 className="btn btn-primary"
                 type="button"
-                onClick={() => setActiveModal('found')}
+                onClick={() => canReport && setActiveModal('found')}
+                disabled={!canReport}
               >
                 <i className="fa-solid fa-box-open btn-icon" aria-hidden="true" />
                 I found an item
@@ -84,7 +130,8 @@ function App() {
               <button
                 className="btn btn-secondary"
                 type="button"
-                onClick={() => setActiveModal('lost')}
+                onClick={() => canReport && setActiveModal('lost')}
+                disabled={!canReport}
               >
                 <i className="fa-solid fa-magnifying-glass btn-icon" aria-hidden="true" />
                 I lost an item
@@ -130,9 +177,9 @@ function App() {
           </main>
         }
       />
-   <Route path="/found" element={<ProtectedFoundItem />} />
-<Route path="/lost" element={<ProtectedLostItem />} />
-<Route path="/profile" element={<ProtectedProfile />} />
+  <Route path="/found" element={<FoundItem />} />
+<Route path="/lost" element={<LostItem />} />
+<Route path="/profile" element={<Profile />} />
       <Route path="/signin" element={<SignIn />} />
       <Route path="/signup" element={<SignUp />} />
       <Route path="/map" element={<MapPage />} />

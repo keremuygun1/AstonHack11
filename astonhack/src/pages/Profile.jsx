@@ -1,13 +1,10 @@
 import { useRef, useState } from "react";
 import { Link } from "react-router-dom";
-import { useAuth0 } from "@auth0/auth0-react";
 
 function Profile() {
   const [isEditing, setIsEditing] = useState(false);
   const [isClosing, setIsClosing] = useState(false);
   const uploadInputRef = useRef(null);
-
-  const { user, isAuthenticated, isLoading, loginWithRedirect, logout } = useAuth0();
 
   const closeModal = () => {
     setIsClosing(true);
@@ -17,37 +14,9 @@ function Profile() {
     }, 220);
   };
 
-  if (isLoading) {
-    return <div className="page">Loading...</div>;
-  }
-
-  // If you want: block profile page when not logged in
-  if (!isAuthenticated) {
-    return (
-      <main className="page">
-        <header className="topbar">
-          <Link className="topbar-left" to="/">
-            <span className="brand-dot" aria-hidden="true" />
-            <span className="brand-name">Lost and Found</span>
-          </Link>
-          <Link className="btn btn-ghost" to="/">Home</Link>
-        </header>
-
-        <section className="form-card">
-          <h1 className="headline">You’re not signed in</h1>
-          <p className="subhead">Log in to view your profile.</p>
-          <button className="btn btn-primary" onClick={() => loginWithRedirect()}>
-            Log in
-          </button>
-        </section>
-      </main>
-    );
-  }
-
-  // Helpers
-  const displayName = user?.name || user?.nickname || user?.email || "User";
-  const displayUsername = user?.nickname || user?.email?.split("@")[0] || "user";
-  const displayEmail = user?.email || "—";
+  const displayName = "Alex Brown";
+  const displayUsername = "alexbrown";
+  const displayEmail = "alex@astonhack.com";
 
   return (
     <main className="page profile-page">
@@ -56,16 +25,7 @@ function Profile() {
           <span className="brand-dot" aria-hidden="true" />
           <span className="brand-name">Lost and Found</span>
         </Link>
-        <div style={{ display: "flex", gap: 8 }}>
-          <Link className="btn btn-ghost" to="/">Home</Link>
-          <button
-            className="btn btn-ghost"
-            type="button"
-            onClick={() => logout({ logoutParams: { returnTo: window.location.origin } })}
-          >
-            Log out
-          </button>
-        </div>
+        <Link className="btn btn-ghost" to="/">Home</Link>
       </header>
 
       <section className="profile-card">
@@ -76,25 +36,8 @@ function Profile() {
         >
           Edit profile
         </button>
-
-const { logout } = useAuth0();
-
-<button
-  className="btn btn-ghost"
-  onClick={() => logout({ logoutParams: { returnTo: window.location.origin } })}
->
-  Log out
-</button>
         <div className="profile-photo">
-          {user?.picture ? (
-            <img
-              src={user.picture}
-              alt={displayName}
-              style={{ width: "100%", height: "100%", borderRadius: "inherit", objectFit: "cover" }}
-            />
-          ) : (
-            <span aria-hidden="true">{displayName.slice(0, 2).toUpperCase()}</span>
-          )}
+          <span aria-hidden="true">{displayName.slice(0, 2).toUpperCase()}</span>
         </div>
 
         <div className="profile-info">
@@ -112,7 +55,116 @@ const { logout } = useAuth0();
         </div>
       </section>
 
-      {/* everything else stays the same... */}
+      <section className="profile-previews">
+        <div className="profile-panel">
+          <div className="profile-panel-header">
+            <h2>Lost items</h2>
+            <span className="panel-count">2</span>
+          </div>
+          <div className="panel-list">
+            <div className="panel-item">
+              <div className="panel-thumb" />
+              <div>
+                <p className="panel-title">Black wallet</p>
+                <p className="panel-subtitle">University of Birmingham</p>
+                <p className="panel-meta">Reported Feb 2, 2026</p>
+              </div>
+              <button className="panel-delete" type="button" aria-label="Delete report">
+                Delete
+              </button>
+            </div>
+            <div className="panel-item">
+              <div className="panel-thumb" />
+              <div>
+                <p className="panel-title">iPhone 13</p>
+                <p className="panel-subtitle">Bullring</p>
+                <p className="panel-meta">Reported Jan 28, 2026</p>
+              </div>
+              <button className="panel-delete" type="button" aria-label="Delete report">
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div className="profile-panel">
+          <div className="profile-panel-header">
+            <h2>Found items</h2>
+            <span className="panel-count">1</span>
+          </div>
+          <div className="panel-list">
+            <div className="panel-item">
+              <div className="panel-thumb" />
+              <div>
+                <p className="panel-title">Blue backpack</p>
+                <p className="panel-subtitle">Aston University</p>
+                <p className="panel-meta">Reported Feb 5, 2026</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {isEditing && (
+        <div
+          className={`modal-overlay${isClosing ? ' modal-overlay--closing' : ''}`}
+          role="presentation"
+          onClick={closeModal}
+        >
+          <div
+            className={`modal-card${isClosing ? ' modal-card--closing' : ''}`}
+            role="dialog"
+            aria-modal="true"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <button className="modal-close" type="button" onClick={closeModal} aria-label="Close">
+              <span aria-hidden="true">×</span>
+            </button>
+            <div className="modal-content">
+              <section className="form-card">
+                <h1 className="headline">Edit profile</h1>
+                <p className="subhead">Update your profile details.</p>
+                <form className="form" autoComplete="on">
+                  <label className="field">
+                    <span>Profile picture</span>
+                    <div className="photo-actions">
+                      <button
+                        className="btn btn-secondary btn-camera"
+                        type="button"
+                        onClick={() => uploadInputRef.current?.click()}
+                      >
+                        Upload photo
+                      </button>
+                      <input
+                        ref={uploadInputRef}
+                        className="file-input file-input--hidden"
+                        type="file"
+                        accept="image/*"
+                      />
+                    </div>
+                  </label>
+                  <label className="field">
+                    <span>Username</span>
+                    <input type="text" name="username" placeholder="Change username" />
+                  </label>
+                  <label className="field">
+                    <span>Name</span>
+                    <input type="text" name="name" placeholder="Change name" />
+                  </label>
+                  <label className="field">
+                    <span>Password</span>
+                    <input type="password" name="password" placeholder="Change password" />
+                  </label>
+                  <button className="btn btn-primary" type="submit">
+                    Save changes
+                  </button>
+                </form>
+              </section>
+            </div>
+          </div>
+        </div>
+      )}
+
     </main>
   );
 }

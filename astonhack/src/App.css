@@ -620,6 +620,21 @@
   box-shadow: 0 14px 28px rgba(56, 189, 248, 0.3);
 }
 
+.btn:disabled,
+.btn[disabled] {
+  cursor: not-allowed;
+  opacity: 0.55;
+  filter: grayscale(0.4);
+  transform: none;
+  box-shadow: none;
+}
+
+.btn:disabled:hover,
+.btn[disabled]:hover {
+  transform: none;
+  box-shadow: none;
+}
+
 .profile-page {
   gap: 2.5rem;
 }
