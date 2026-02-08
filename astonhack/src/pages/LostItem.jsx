@@ -2,8 +2,12 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import { db, collection, addDoc, serverTimestamp } from "../firebase";
 
+import api from './api.js'
+
 function LostItem({ embedded = false }) {
   const [submitting, setSubmitting] = useState(false);
+  const [verdict, setVerdict] = useState(null);
+  const [matchError, setMatchError] = useState("");
 
   const handleSubmit = async (event) => {
     event.preventDefault();
@@ -29,6 +33,12 @@ function LostItem({ embedded = false }) {
       setSubmitting(true);
 
       const docRef = await addDoc(collection(db, "lostItems"), payload);
+
+      setMatchError("");
+      const res = await api.post("/match", { itemId: docRef.id });
+      console.log("match verdict:", res.data);
+      setVerdict(res.data);
+
       console.log("✅ Saved lost item:", docRef.id);
 
       event.target.reset();

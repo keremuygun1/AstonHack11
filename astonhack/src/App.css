@@ -66,6 +66,48 @@
   max-height: none;
 }
 
+.match-grid {
+  display: grid;
+  gap: 1rem;
+  margin: 1.5rem 0 1.8rem;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+}
+
+.match-card {
+  padding: 1.1rem 1.2rem;
+  border-radius: 16px;
+  background: rgba(12, 20, 35, 0.7);
+  border: 1px solid rgba(94, 234, 212, 0.18);
+  box-shadow: 0 12px 26px rgba(2, 8, 23, 0.35);
+}
+
+.match-label {
+  margin: 0 0 0.4rem;
+  text-transform: uppercase;
+  font-size: 0.75rem;
+  letter-spacing: 0.12em;
+  color: #7dd3fc;
+}
+
+.match-title {
+  margin: 0 0 0.3rem;
+  font-size: 1.2rem;
+  color: #e2fefc;
+}
+
+.match-subtitle {
+  margin: 0;
+  color: #9fb4c8;
+  font-size: 0.95rem;
+}
+
+.match-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  justify-content: flex-end;
+}
+
 .modal-close {
   margin-left: auto;
   background: rgba(14, 116, 144, 0.15);

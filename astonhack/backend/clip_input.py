@@ -10,6 +10,32 @@ import requests
 from database import get_firestore
 #import db
 
+def debug_collection_fields(collection_name: str, required_fields: list[str], limit: int | None = None):
+    print(f"\n=== DEBUG {collection_name} required={required_fields} ===")
+    docs = db.collection(collection_name).stream()
+    total = 0
+    bad = 0
+
+    for d in docs:
+        total += 1
+        data = d.to_dict() or {}
+
+        missing = [k for k in required_fields if not data.get(k)]
+        if missing:
+            bad += 1
+            print(f"\n[Missing] {collection_name}/{d.id}")
+            print("  missing:", missing)
+            print("  keys:", sorted(list(data.keys())))
+            # show a few suspect values
+            for k in required_fields:
+                print(f"  {k} =", repr(data.get(k))[:200])
+
+        if limit and total >= limit:
+            break
+
+    print(f"\n=== SUMMARY {collection_name}: total={total}, bad={bad} ===")
+
+
 db = get_firestore()
 
 def pil_from_url(url: str) -> Image.Image:
@@ -106,6 +132,9 @@ def match_text(description):
     ids = []
 
     images_original = []
+
+    debug_collection_fields("foundItems", ["imageUrl", "name", "userId"])
+    debug_collection_fields("lostItems", ["description", "name", "color", "time", "userId"])
 
     found_items = fetch_found_items()
     for item in found_items:

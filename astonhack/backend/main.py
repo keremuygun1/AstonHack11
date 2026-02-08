@@ -147,8 +147,11 @@ def final_verdict(item_id):
                     os.remove(tmp_path)
                 except OSError:
                     pass
-    tmp_path = url_to_temp_path(img_url)
-    image = Image.open(tmp_path).convert("RGB")
+    if collection == 'foundItems':
+        tmp_path = url_to_temp_path(img_url)
+        input_q = Image.open(tmp_path).convert("RGB")
+    elif collection == 'lostItems':
+        input_q = data.get('description')
 
         
     #now, combine everything and give it to the gemini agent to decide on the final verdict
@@ -211,7 +214,7 @@ def final_verdict(item_id):
 
     resp = client.models.generate_content(
             model="gemini-2.0-flash",
-            contents=[PROMPT,image,json.dumps(decision_packet)],
+            contents=[PROMPT,input_q,json.dumps(decision_packet)],
             config=types.GenerateContentConfig(
                 temperature=0,
                 response_mime_type="application/json",

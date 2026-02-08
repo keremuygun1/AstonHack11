@@ -8,6 +8,7 @@ import SignIn from './pages/SignIn.jsx'
 import SignUp from './pages/SignUp.jsx'
 import MapPage from './pages/MapPage.jsx'
 import Profile from './pages/Profile.jsx'
+import Match from './pages/Match.jsx'
 import { useAuth0 } from "@auth0/auth0-react";
 // Profile should be accessible without Auth0 redirect
 
@@ -183,6 +184,7 @@ function App() {
       <Route path="/signin" element={<SignIn />} />
       <Route path="/signup" element={<SignUp />} />
       <Route path="/map" element={<MapPage />} />
+      <Route path="/match" element={<Match />} />
     </Routes>
   )
 }
