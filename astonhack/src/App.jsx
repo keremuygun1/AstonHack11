@@ -6,9 +6,9 @@ import FoundItem from './pages/FoundItem.jsx'
 import LostItem from './pages/LostItem.jsx'
 import SignIn from './pages/SignIn.jsx'
 import SignUp from './pages/SignUp.jsx'
-import MapPage from './pages/MapPage.jsx'
+import Map from './pages/Map.jsx'
 import Profile from './pages/Profile.jsx'
-import Match from './pages/Match.jsx'
+import MatchResult from './pages/MatchResult.jsx'
 import { useAuth0 } from "@auth0/auth0-react";
 // Profile should be accessible without Auth0 redirect
 
@@ -19,6 +19,7 @@ function App() {
   const [activeModal, setActiveModal] = useState(null)
   const [isClosing, setIsClosing] = useState(false)
   const [authRedirected, setAuthRedirected] = useState(false)
+  const [matchResult, setMatchResult] = useState(null);
 
   useEffect(() => {
     const params = new URLSearchParams(location.search)
@@ -80,7 +81,7 @@ function App() {
             <header className="topbar">
               <Link className="topbar-left" to="/">
                 <span className="brand-dot" aria-hidden="true" />
-                <span className="brand-name">Lost and Found</span>
+                <span className="brand-name">BackTrack</span>
               </Link>
               {shouldShowAuth.showLogout && (
                 <div className="topbar-actions">
@@ -137,10 +138,10 @@ function App() {
                 <i className="fa-solid fa-magnifying-glass btn-icon" aria-hidden="true" />
                 I lost an item
               </button>
-              <a className="btn btn-secondary" href="/maps/map.html">
+                <Link className="btn btn-secondary" to="/map">
                 <i className="fa-solid fa-map-location-dot btn-icon" aria-hidden="true" />
-                View map
-              </a>
+                    View map
+                </Link>
             </div>
             {activeModal && (
               <div
@@ -163,13 +164,32 @@ function App() {
                     <span aria-hidden="true">×</span>
                   </button>
                   <div className="modal-content">
-                    {activeModal === 'found' && <FoundItem embedded />}
-                    {activeModal === 'lost' && <LostItem embedded />}
+                    {activeModal === 'found' && (
+                      <FoundItem 
+                      embedded 
+                      onMatchResult={(result) => {
+                      closeModal();
+                      setTimeout(() => {
+                        setMatchResult(result);
+                        setActiveModal('matchResult');
+                         }, 230);
+                      }} />
+                    )}
+
+                    {activeModal === 'lost' && (
+                      <LostItem embedded onDone={closeModal} onClose={closeModal} />
+                    )}
+
                     {activeModal === 'signin' && (
                       <SignIn embedded onSwitchToSignUp={() => setActiveModal('signup')} />
                     )}
+
                     {activeModal === 'signup' && (
                       <SignUp embedded onSwitchToSignIn={() => setActiveModal('signin')} />
+                    )}
+
+                    {activeModal === 'matchResult' && (
+                      <MatchResult result={matchResult} onClose={closeModal} />
                     )}
                   </div>
                 </div>
@@ -183,8 +203,8 @@ function App() {
 <Route path="/profile" element={<Profile />} />
       <Route path="/signin" element={<SignIn />} />
       <Route path="/signup" element={<SignUp />} />
-      <Route path="/map" element={<MapPage />} />
-      <Route path="/match" element={<Match />} />
+      <Route path="/matchresult" element={<MatchResult />} />
+      <Route path='/map' element={<Map />} />
     </Routes>
   )
 }

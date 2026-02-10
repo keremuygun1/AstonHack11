@@ -17,20 +17,23 @@ from io import BytesIO
 from google import genai
 from google.genai import types
 
-from pydantic import BaseModel
-from typing import Any, Optional, List, Dict
+from pydantic import BaseModel, Field
+from typing import List, Optional, Literal
 
 
 class MatchRequest(BaseModel):
     itemId: str
 
 class MatchResponse(BaseModel):
-    decision: str
-    best_candidate_id: Optional[str] = None
-    confidence: float = 0.0
-    reasons: List[str] = []
-    candidates: List[Dict[str, Any]] = []
+    decision: Literal["match", "no_match", "needs_review"]
+    given_id: str
+    matched_id: Optional[str] = None
+    confidence: float
+    reasons: List[str]
 
+    class Config:
+        extra = "forbid"  # ensures you don't accidentally return old keys
+        
 app = FastAPI()
 
 origins = [
@@ -156,7 +159,8 @@ def final_verdict(item_id):
         
     #now, combine everything and give it to the gemini agent to decide on the final verdict
     decision_packet = {
-        "ocr.score_margin": margin,
+        "given_id": item_id,
+        "clip.score_margin": margin,
         "candidates" : best_three,
         "should_ocr" : should_ocr,
         "ocr_results" : text,
@@ -171,6 +175,8 @@ def final_verdict(item_id):
     Each candidate includes a CLIP similarity score and may include OCR output text.
 
     Decide whether any candidate is a real match.
+
+    item identification:
 
     Rules:
 
@@ -193,6 +199,8 @@ def final_verdict(item_id):
 
     If ranking.score_margin < 0.03, treat it as ambiguous.
 
+    If ranking.score_margin < 0.01, treat it as a no_match. you MUST output "decision":"no_match"
+
     Decision rule (MUST FOLLOW):
 
     If OCR contains a matching identifier (name/id/phone/email/serial) between source and a candidate → output "decision":"match" and set that candidate’s id.
@@ -203,10 +211,11 @@ def final_verdict(item_id):
 
     Otherwise → "needs_review".
 
-    Output ONLY valid JSON with exactly these keys:
+    Output ONLY valid JSON with exactly these keys(MUST FOLLOW):
     {
     "decision": "match" | "no_match" | "needs_review",
-    "best_candidate_id": string | null,
+    "given_id": string,
+    "matched_id": string | null,
     "confidence": number,
     "reasons": [string]
     }
@@ -221,13 +230,25 @@ def final_verdict(item_id):
                 max_output_tokens=400,
             ),
         )
-    
-    print(resp)
 
-    verdict = json.loads(resp.text)   # dict with decision/best_candidate_id/confidence/reasons
-    verdict["candidates"] = best_three_structured  # optional but useful
+    raw_text = resp.candidates[0].content.parts[0].text  # <-- this is the JSON string
+    raw_text = raw_text.strip()
 
-    return verdict
+    # If your model ever wraps in ```json fences, strip them defensively:
+    if raw_text.startswith("```"):
+        raw_text = raw_text.split("```", 2)[1].strip()
+        if raw_text.startswith("json"):
+            raw_text = raw_text[4:].strip()
+
+    structured = json.loads(raw_text)  # <-- now it's a dict with your keys
+
+    # OPTIONAL: validate keys so you don't accidentally return wrong shape
+    required = {"decision", "given_id", "matched_id", "confidence", "reasons"}
+    if set(structured.keys()) != required:
+        raise ValueError(f"Model returned unexpected keys: {structured.keys()}")
+
+    print(structured)
+    return structured  # in Flask: return jsonify(structured)
 
 if __name__ == '__main__':
     uvicorn.run(gate, host= "0.0.0.0",port = 8000)

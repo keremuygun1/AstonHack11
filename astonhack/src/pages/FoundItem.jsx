@@ -5,9 +5,10 @@ import { db,
   addDoc, 
   serverTimestamp} from "../firebase";
 
-  import api from './api.js'
+import api from './api.js';
 
-function FoundItem({ embedded = false }) {
+
+function FoundItem({ embedded, onDone, onMatchResult }) {
   const [photoPreviews, setPhotoPreviews] = useState([]);
   const [files, setFiles] = useState([]); // actual File objects to upload
   const [isCameraOpen, setIsCameraOpen] = useState(false);
@@ -180,9 +181,17 @@ function FoundItem({ embedded = false }) {
       const docRef = await addDoc(collection(db, "foundItems"), payload);
 
       setMatchError("");
+      console.log("POSTING TO:", api.defaults?.baseURL, "/match");
       const res = await api.post("/match", { itemId: docRef.id });
-      console.log("match verdict:", res.data);
+      console.log(res.data)
       setVerdict(res.data);
+      onMatchResult?.({
+        decision: res.data.decision,
+        foundId: res.data.given_id,      // or docRef.id (both should match)
+        lostId: res.data.matched_id,     // may be null
+        confidence: res.data.confidence,
+        reasons: res.data.reasons,
+      });
 
       console.log("✅ Saved found item:", docRef.id, imageUrl);
 
@@ -191,6 +200,7 @@ function FoundItem({ embedded = false }) {
       photoPreviews.forEach((url) => URL.revokeObjectURL(url));
       setPhotoPreviews([]);
       setFiles([]);
+      onDone?.();
     } catch (err) {
       console.error(err);
       alert(err.message || "Something went wrong uploading the image.");

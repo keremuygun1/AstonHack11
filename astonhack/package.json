@@ -11,6 +11,7 @@
   },
   "dependencies": {
     "@auth0/auth0-react": "^2.13.0",
+    "@react-google-maps/api": "^2.20.8",
     "axios": "^1.13.4",
     "firebase": "^12.9.0",
     "react": "^19.2.0",
